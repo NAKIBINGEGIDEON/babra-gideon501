@@ -30,7 +30,7 @@ def plot_stacked_bar_chart(data, x_column, y_column):
 
     # Plot stacked bar chart
     fig = px.bar(filtered_data, x=x_column, color="IncomeChange",
-                 title=f"Relationship between {x_column} and Income Change",
+                 title=f"Relationship between {x_column} and Income Change (Decreased a lot)",
                  category_orders={y_column: sorted(filtered_data[y_column].astype(str).unique())},
                  color_discrete_map={"Decreased a lot": "#FF5733"})
 
@@ -66,15 +66,12 @@ def main():
         # Select another variable
         selected_variable = st.sidebar.selectbox("Select another variable", data.columns)
 
-        # Filter for only Yes and No for JobLoss
-        filtered_data = data[data["JobLoss"].isin(["Yes", "No"])]
-
         # Plotting stacked bar chart
         if st.button("Analyze Ability to Work"):
-            fig = plot_stacked_bar_chart(filtered_data, selected_variable, "JobLoss")
+            fig = plot_stacked_bar_chart(data, selected_variable, "JobLoss")
             st.subheader("Relationship between Job Loss (Yes) and Another Variable")
             st.plotly_chart(fig)
-
+    
     elif analysis_type == "Income Change":
         # Select another variable
         selected_variable = st.sidebar.selectbox("Select another variable", data.columns)
