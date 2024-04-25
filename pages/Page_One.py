@@ -1,9 +1,13 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import numpy as np
+
+# Suppress warnings
+st.set_option('deprecation.showPyplotGlobalUse', False)
 
 # Load data from GitHub
-@st.cache_data()
+@st.cache_data
 def load_data_from_github(url):
     try:
         data = pd.read_csv(url)
@@ -12,31 +16,39 @@ def load_data_from_github(url):
         st.error(f"An error occurred while loading the data: {str(e)}")
         return None
 
-# Function to plot stacked bar chart with percentages for "Decreased a lot" category of IncomeChange and filtered variable
-@st.cache_data()
-def plot_stacked_bar_chart(data, x_column, y_column):
+# Function to plot stacked bar chart with percentages for a specific category and another variable
+@st.cache_data
+def plot_stacked_bar_chart(data, x_column, y_column, category):
     # Filter out missing values for x_column and y_column
     filtered_data = data.dropna(subset=[x_column, y_column])
 
     # Convert the column to string to ensure compatibility for plotting
     filtered_data[x_column] = filtered_data[x_column].astype(str)
 
-    # Filter data for "Decreased a lot" category of IncomeChange
-    filtered_data = filtered_data[filtered_data["IncomeChange"] == "Decreased a lot"]
+    # Filter data based on the selected category
+    filtered_data = filtered_data[filtered_data[y_column] == category]
 
-    # Calculate percentage for each category
+    # Calculate percentage for each category in x_column
     totals = filtered_data.groupby([x_column]).size()
     percentages = (totals / totals.sum()) * 100
 
+    # Get unique categories for x_column
+    categories = filtered_data[x_column].unique()
+
+    # Define a custom color palette
+    custom_palette = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+
+    # Create a color map for categories
+    color_map = {category: custom_palette[i % len(custom_palette)] for i, category in enumerate(categories)}
+
     # Plot stacked bar chart
-    fig = px.bar(filtered_data, x=x_column, color="IncomeChange",
-                 title=f"Relationship between {x_column} and Income Change (Decreased a lot)",
-                 category_orders={y_column: sorted(filtered_data[y_column].astype(str).unique())},
-                 color_discrete_map={"Decreased a lot": "#FF5733"})
+    fig = px.bar(filtered_data, x=x_column, color=y_column,
+                 title=f"Relationship between {x_column} and {y_column} ({category})",
+                 color_discrete_map=color_map)
 
     # Add percentage text annotations to the plot
-    for index, value in percentages.items():
-        fig.add_annotation(x=index, y=value, text=f"{value:.0f}%", showarrow=False)
+    for i, (index, value) in enumerate(percentages.items()):
+        fig.add_annotation(x=index, y=value, text=f"{value:.0f}%", showarrow=False, yshift=10, font=dict(color=color_map[index]))
 
     return fig
 
@@ -66,19 +78,19 @@ def main():
         # Select another variable
         selected_variable = st.sidebar.selectbox("Select another variable", data.columns)
 
-        # Plotting stacked bar chart
+        # Plotting stacked bar chart for Ability to Work
         if st.button("Analyze Ability to Work"):
-            fig = plot_stacked_bar_chart(data, selected_variable, "JobLoss")
-            st.subheader("Relationship between Job Loss (Yes) and Another Variable")
+            fig = plot_stacked_bar_chart(data, selected_variable, "JobLoss", "Yes")
+            st.subheader("Relationship between Job Loss (Yes) and Another Variable (Ability to Work)")
             st.plotly_chart(fig)
     
     elif analysis_type == "Income Change":
         # Select another variable
         selected_variable = st.sidebar.selectbox("Select another variable", data.columns)
 
-        # Plotting income change
+        # Plotting stacked bar chart for Income Change
         if st.button("Analyze Income Change"):
-            fig = plot_stacked_bar_chart(data, selected_variable, "IncomeChange")
+            fig = plot_stacked_bar_chart(data, selected_variable, "IncomeChange", "Decreased a lot")
             st.subheader("Relationship between Income Change (Decreased a lot) and Another Variable")
             st.plotly_chart(fig)
 
