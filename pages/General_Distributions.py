@@ -35,7 +35,7 @@ def plot_percentage_bar_chart(data, column):
 
 # Main function for Streamlit app
 def main():
-    st.title("Exploratory Data Analysis")
+    st.title("General Distribution")
 
     # Get URL of the dataset on GitHub
     github_url = "https://raw.githubusercontent.com/NAKIBINGEGIDEON/data-analysis-and-visualization-project/92354269f67066df75a9fb6e47cbdcc820cbfc78/data.csv"
