@@ -1,84 +1,90 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from typing import Any
-
-import numpy as np
-
 import streamlit as st
-from streamlit.hello.utils import show_code
+import pandas as pd
+import plotly.express as px
 
+# Load data from GitHub
+@st.cache_data()
+def load_data_from_github(url):
+    try:
+        data = pd.read_csv(url)
+        return data
+    except Exception as e:
+        st.error(f"An error occurred while loading the data: {str(e)}")
+        return None
 
-def animation_demo() -> None:
+# Function to plot stacked bar chart with percentages for "Decreased a lot" category of IncomeChange and filtered variable
+@st.cache_data()
+def plot_stacked_bar_chart(data, x_column, y_column):
+    # Filter out missing values for x_column and y_column
+    filtered_data = data.dropna(subset=[x_column, y_column])
 
-    # Interactive Streamlit elements, like these sliders, return their value.
-    # This gives you an extremely simple interaction model.
-    iterations = st.sidebar.slider("Level of detail", 2, 20, 10, 1)
-    separation = st.sidebar.slider("Separation", 0.7, 2.0, 0.7885)
+    # Convert the column to string to ensure compatibility for plotting
+    filtered_data[x_column] = filtered_data[x_column].astype(str)
 
-    # Non-interactive elements return a placeholder to their location
-    # in the app. Here we're storing progress_bar to update it later.
-    progress_bar = st.sidebar.progress(0)
+    # Filter data for "Decreased a lot" category of IncomeChange
+    filtered_data = filtered_data[filtered_data["IncomeChange"] == "Decreased a lot"]
 
-    # These two elements will be filled in later, so we create a placeholder
-    # for them using st.empty()
-    frame_text = st.sidebar.empty()
-    image = st.empty()
+    # Calculate percentage for each category
+    totals = filtered_data.groupby([x_column]).size()
+    percentages = (totals / totals.sum()) * 100
 
-    m, n, s = 960, 640, 400
-    x = np.linspace(-m / s, m / s, num=m).reshape((1, m))
-    y = np.linspace(-n / s, n / s, num=n).reshape((n, 1))
+    # Plot stacked bar chart
+    fig = px.bar(filtered_data, x=x_column, color="IncomeChange",
+                 title=f"Relationship between {x_column} and Income Change",
+                 category_orders={y_column: sorted(filtered_data[y_column].astype(str).unique())},
+                 color_discrete_map={"Decreased a lot": "#FF5733"})
 
-    for frame_num, a in enumerate(np.linspace(0.0, 4 * np.pi, 100)):
-        # Here were setting value for these two elements.
-        progress_bar.progress(frame_num)
-        frame_text.text("Frame %i/100" % (frame_num + 1))
+    # Add percentage text annotations to the plot
+    for index, value in percentages.items():
+        fig.add_annotation(x=index, y=value, text=f"{value:.0f}%", showarrow=False)
 
-        # Performing some fractal wizardry.
-        c = separation * np.exp(1j * a)
-        Z = np.tile(x, (n, 1)) + 1j * np.tile(y, (1, m))
-        C = np.full((n, m), c)
-        M: Any = np.full((n, m), True, dtype=bool)
-        N = np.zeros((n, m))
+    return fig
 
-        for i in range(iterations):
-            Z[M] = Z[M] * Z[M] + C[M]
-            M[np.abs(Z) > 2] = False
-            N[M] = i
+# Main function for Streamlit app
+def main():
+    # Set page configuration
+    st.set_page_config(
+        page_title="Power BI-like Dashboard",
+        page_icon="📊"
+    )
 
-        # Update the image placeholder by calling the image() function on it.
-        image.image(1.0 - (N / N.max()), use_column_width=True)
+    # Design Home Page
+    st.title("Power BI-like Dashboard")
+    st.markdown("## Welcome to the Dashboard!")
 
-    # We clear elements by calling empty on them.
-    progress_bar.empty()
-    frame_text.empty()
+    # Get URL of the dataset on GitHub
+    github_url = "https://raw.githubusercontent.com/NAKIBINGEGIDEON/data-analysis-and-visualization-project/92354269f67066df75a9fb6e47cbdcc820cbfc78/data.csv"
 
-    # Streamlit widgets automatically run the script from top to bottom. Since
-    # this button is not connected to any other logic, it just causes a plain
-    # rerun.
-    st.button("Re-run")
+    # Load the dataset
+    data = load_data_from_github(github_url)
 
+    # Sidebar for navigation
+    st.sidebar.header("Analysis Type")
+    analysis_type = st.sidebar.radio("Select Analysis Type", ["Ability to Work", "Income Change"])
 
-st.set_page_config(page_title="Animation Demo", page_icon="📹")
-st.markdown("# Animation Demo")
-st.sidebar.header("Animation Demo")
-st.write(
-    """This app shows how you can use Streamlit to build cool animations.
-It displays an animated fractal based on the the Julia Set. Use the slider
-to tune different parameters."""
-)
+    if analysis_type == "Ability to Work":
+        # Select another variable
+        selected_variable = st.sidebar.selectbox("Select another variable", data.columns)
 
-animation_demo()
+        # Filter for only Yes and No for JobLoss
+        filtered_data = data[data["JobLoss"].isin(["Yes", "No"])]
 
-show_code(animation_demo)
+        # Plotting stacked bar chart
+        if st.button("Analyze Ability to Work"):
+            fig = plot_stacked_bar_chart(filtered_data, selected_variable, "JobLoss")
+            st.subheader("Relationship between Job Loss (Yes) and Another Variable")
+            st.plotly_chart(fig)
+
+    elif analysis_type == "Income Change":
+        # Select another variable
+        selected_variable = st.sidebar.selectbox("Select another variable", data.columns)
+
+        # Plotting income change
+        if st.button("Analyze Income Change"):
+            fig = plot_stacked_bar_chart(data, selected_variable, "IncomeChange")
+            st.subheader("Relationship between Income Change (Decreased a lot) and Another Variable")
+            st.plotly_chart(fig)
+
+# Entry point of the Streamlit app
+if __name__ == "__main__":
+    main()
