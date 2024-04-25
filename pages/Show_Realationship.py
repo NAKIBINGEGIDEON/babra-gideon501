@@ -29,8 +29,8 @@ st.markdown(
 
 # Sidebar for selecting variables
 st.sidebar.title('Dashboard Settings')
-selected_variable_x = st.sidebar.selectbox('Select X Variable', variables)
-selected_variable_y = st.sidebar.selectbox('Select Y Variable', variables)
+selected_variable_x = st.sidebar.selectbox('Select Y Variable', variables)
+selected_variable_y = st.sidebar.selectbox('Select X Variable', variables)
 
 # Create a cross-tabulation of the selected variables
 cross_tab = pd.crosstab(df[selected_variable_x], df[selected_variable_y], normalize='columns') * 100
