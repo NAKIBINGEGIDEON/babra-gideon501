@@ -21,7 +21,7 @@ st.set_page_config(layout="wide")  # Set layout to wide
 st.markdown(
     """
     <div style="text-align:center">
-        <h1>African Countries Dashboard</h1>
+        <h1>Variable Relationship Dashboard</h1>
     </div>
     """,
     unsafe_allow_html=True
