@@ -36,11 +36,11 @@ selected_variable_y = st.sidebar.selectbox('Select Y Variable', variables)
 cross_tab = pd.crosstab(df[selected_variable_x], df[selected_variable_y], normalize='columns') * 100
 
 # Create an interactive heatmap
-plt.figure(figsize=(10, 8))
-heatmap = sns.heatmap(cross_tab, annot=True, fmt=".0f", cmap="BuPu")
-plt.title(f"Heatmap: {selected_variable_x} vs {selected_variable_y}")
-plt.xlabel(selected_variable_y)
-plt.ylabel(selected_variable_x)
+plt.figure(figsize=(6, 4))  # Adjust figure size
+heatmap = sns.heatmap(cross_tab, annot=True, fmt=".0f", cmap="BuPu", annot_kws={"size": 8})  # Adjust font size
+plt.title(f"Heatmap: {selected_variable_x} vs {selected_variable_y}", fontsize=10)  # Adjust title font size
+plt.xlabel(selected_variable_y, fontsize=8)  # Adjust x-axis label font size
+plt.ylabel(selected_variable_x, fontsize=8)  # Adjust y-axis label font size
 
 # Display the heatmap
 st.pyplot(heatmap.figure)
