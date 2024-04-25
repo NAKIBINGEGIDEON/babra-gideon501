@@ -1,51 +1,60 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
 
 import streamlit as st
-from streamlit.logger import get_logger
+import pandas as pd
 
-LOGGER = get_logger(__name__)
+# Define countries with latitude and longitude data
+countries = {
+    'Nigeria': {'lat': 9.082, 'lon': 8.675},
+    'Ivory Coast': {'lat': 7.54, 'lon': -5.5471},
+    'Kenya': {'lat': 1.2921, 'lon': 36.8219},
+    'Mozambique': {'lat': -18.665695, 'lon': 35.529562},
+    'South Africa': {'lat': -30.5595, 'lon': 22.9375}  # Adding South Africa
+}
 
+# Function to load data from GitHub
+def load_data_from_github(url):
+    try:
+        data = pd.read_csv(url)
+        return data
+    except Exception as e:
+        st.error(f"An error occurred while loading the data: {str(e)}")
+        return None
 
-def run():
+# Function to plot static map with markers
+def plot_static_map():
+    st.subheader("Countries with Data Collection")
+    for country in countries.keys():
+        st.markdown(f"- {country}")
+
+    st.subheader("Map of Data Collection Countries")
+    st.map(countries.values())
+
+# Main function for Streamlit app
+def main():
+    # Set page configuration
     st.set_page_config(
-        page_title="Hello",
-        page_icon="👋",
+        page_title="Impact of COVID-19 in Sub-Saharan Africa",
+        page_icon="🌍"
     )
 
-    st.write("# Welcome to Streamlit! 👋")
+    # Design Home Page
+    st.title("Impact of COVID-19 in Sub-Saharan Africa")
+    st.markdown("## Welcome to the Dashboard!")
 
-    st.sidebar.success("Select a demo above.")
+    # Display static map with markers
+    plot_static_map()
 
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+    # Get URL of the dataset on GitHub
+    github_url = "https://raw.githubusercontent.com/NAKIBINGEGIDEON/data-analysis-and-visualization-project/92354269f67066df75a9fb6e47cbdcc820cbfc78/data.csv"
 
+    # Load the dataset
+    data = load_data_from_github(github_url)
 
+    if data is not None:
+        st.header("Dataset Preview:")
+        st.write(data.head())
+
+# Entry point of the Streamlit app
 if __name__ == "__main__":
-    run()
+    main()
