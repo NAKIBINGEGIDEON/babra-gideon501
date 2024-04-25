@@ -56,7 +56,7 @@ def plot_stacked_bar_chart(data, x_column, y_column, category):
 def main():
     # Set page configuration
     st.set_page_config(
-        page_title="Power BI-like Dashboard",
+        page_title="Ability to work & Income Change",
         page_icon="📊"
     )
 
