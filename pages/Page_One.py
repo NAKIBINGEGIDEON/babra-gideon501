@@ -61,7 +61,7 @@ def main():
     )
 
     # Design Home Page
-    st.title("Power BI-like Dashboard")
+    st.title("Ability to work & Income Change")
     st.markdown("## Welcome to the Dashboard!")
 
     # Get URL of the dataset on GitHub
