@@ -1,77 +1,83 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from urllib.error import URLError
-
-import altair as alt
-import pandas as pd
-
+# Import necessary libraries
 import streamlit as st
-from streamlit.hello.utils import show_code
+import pandas as pd
+import plotly.express as px
 
+# Define countries with latitude and longitude data
+countries = {
+    'Nigeria': {'lat': 9.082, 'lon': 8.675},
+    'Ivory Coast': {'lat': 7.54, 'lon': -5.5471},
+    'Kenya': {'lat': 1.2921, 'lon': 36.8219},
+    'Mozambique': {'lat': -18.665695, 'lon': 35.529562},
+    'Ivory Coast (Côte d\'Ivoire)': {'lat': 7.54, 'lon': -5.5471}  # Adding for Ivory Coast alias
+}
 
-def data_frame_demo():
-    @st.cache_data
-    def get_UN_data():
-        AWS_BUCKET_URL = "https://streamlit-demo-data.s3-us-west-2.amazonaws.com"
-        df = pd.read_csv(AWS_BUCKET_URL + "/agri.csv.gz")
-        return df.set_index("Region")
-
+# Function to load data from GitHub
+def load_data_from_github(url):
     try:
-        df = get_UN_data()
-        countries = st.multiselect(
-            "Choose countries", list(df.index), ["China", "United States of America"]
-        )
-        if not countries:
-            st.error("Please select at least one country.")
+        data = pd.read_csv(url)
+        return data
+    except Exception as e:
+        st.error(f"An error occurred while loading the data: {str(e)}")
+        return None
+
+# Function to plot percentage bar chart
+def plot_percentage_bar_chart(data, column):
+    category_percentage = data[column].value_counts(normalize=True) * 100
+    fig = px.bar(category_percentage, x=category_percentage.index, y=category_percentage.values,
+                 labels={'x': f'{column}', 'y': 'Percentage'},
+                 title=f'Percentage of {column} by Category',
+                 color=category_percentage.index,
+                 color_discrete_sequence=px.colors.qualitative.Plotly)
+    fig.update_traces(texttemplate='%{y:.0f}%', textposition='outside')
+    fig.update_layout(xaxis_title=None, yaxis_title=None)
+    st.plotly_chart(fig)
+
+# Main function for Streamlit app
+def main():
+    st.title("Exploratory Data Analysis")
+
+    # Get URL of the dataset on GitHub
+    github_url = "https://raw.githubusercontent.com/NAKIBINGEGIDEON/data-analysis-and-visualization-project/92354269f67066df75a9fb6e47cbdcc820cbfc78/data.csv"
+
+    # Load the dataset
+    data = load_data_from_github(github_url)
+
+    if data is not None:
+        st.header("Dataset Preview:")
+        st.write(data.head())
+
+    # Filter countries
+    selected_country = st.multiselect("Select Countries", list(countries.keys()), default=list(countries.keys()))
+
+    # Filter columns
+    if data is not None:
+        selected_columns = st.multiselect("Select Columns", data.columns)
+
+        if selected_country:
+            filtered_data = data[data['Country'].isin(selected_country)]
         else:
-            data = df.loc[countries]
-            data /= 1000000.0
-            st.write("### Gross Agricultural Production ($B)", data.sort_index())
+            filtered_data = data
 
-            data = data.T.reset_index()
-            data = pd.melt(data, id_vars=["index"]).rename(
-                columns={"index": "year", "value": "Gross Agricultural Product ($B)"}
-            )
-            chart = (
-                alt.Chart(data)
-                .mark_area(opacity=0.3)
-                .encode(
-                    x="year:T",
-                    y=alt.Y("Gross Agricultural Product ($B):Q", stack=None),
-                    color="Region:N",
-                )
-            )
-            st.altair_chart(chart, use_container_width=True)
-    except URLError as e:
-        st.error(
-            """
-            **This demo requires internet access.**
-            Connection error: %s
-        """
-            % e.reason
-        )
+        if selected_columns:
+            filtered_data = filtered_data[selected_columns]
 
+        # Display filtered data
+        st.subheader("Filtered Data")
+        st.write(filtered_data)
 
-st.set_page_config(page_title="DataFrame Demo", page_icon="📊")
-st.markdown("# DataFrame Demo")
-st.sidebar.header("DataFrame Demo")
-st.write(
-    """This demo shows how to use `st.write` to visualize Pandas DataFrames.
-(Data courtesy of the [UN Data Explorer](http://data.un.org/Explorer.aspx).)"""
+        # Plot interactive bar charts showing percentages
+        if not filtered_data.empty and selected_columns:
+            for column in selected_columns:
+                st.subheader(f"Percentage of {column} by Category")
+                plot_percentage_bar_chart(filtered_data, column)
+
+# Set page configuration
+st.set_page_config(
+    page_title="Impact of COVID-19 in Sub-Saharan Africa",
+    page_icon="🌍"
 )
 
-data_frame_demo()
-
-show_code(data_frame_demo)
+# Entry point of the Streamlit app
+if __name__ == "__main__":
+    main()
